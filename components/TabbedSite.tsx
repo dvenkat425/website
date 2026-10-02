@@ -46,6 +46,15 @@ function MailIcon() {
   );
 }
 
+function PenIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+      <path d="m13.5 6.5 4 4" />
+    </svg>
+  );
+}
+
 function ArrowIcon() {
   return (
     <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -63,86 +72,124 @@ function Ext({ href, children, className }: { href: string; children: React.Reac
   );
 }
 
+/* ---------- Logo ---------- */
+
+// Loads the organization's logo from its website. Falls back to initials if it can't load.
+function Logo({ name, domain, src, size = "md" }: { name: string; domain: string; src?: string; size?: "sm" | "md" }) {
+  const [failed, setFailed] = useState(false);
+  const url = src || `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+  const initials = name
+    .replace(/[^A-Za-z ]/g, "")
+    .split(" ")
+    .filter((w) => w && !["of", "at", "and", "the"].includes(w.toLowerCase()))
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+
+  return (
+    <span className={`logo logo-${size}`} aria-hidden="true">
+      {failed ? (
+        <span className="logo-fallback">{initials}</span>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt="" loading="lazy" onError={() => setFailed(true)} />
+      )}
+    </span>
+  );
+}
+
 /* ---------- Panels ---------- */
 
 function About() {
+  const e = site.education;
   return (
-    <div className="panel-inner">
-      {site.status && (
-        <p className="status">
-          <span className="dot" aria-hidden="true" />
-          {site.status}
-        </p>
-      )}
+    <div className="stack">
       <div className="prose">
         {site.about.map((p, i) => (
           <p key={i}>{p}</p>
         ))}
       </div>
-      <dl className="facts">
-        {site.facts.map((f) => (
-          <div key={f.label}>
-            <dt>{f.label}</dt>
-            <dd>{f.value}</dd>
+
+      <section className="group" aria-labelledby="edu-h">
+        <h2 id="edu-h" className="group-title">Education</h2>
+        <div className="card row">
+          <Logo name={e.school} domain={e.domain} src={e.logo} />
+          <div className="row-main">
+            <p className="row-title">{e.school}</p>
+            <p className="row-sub">{e.degrees}</p>
+            <p className="row-sub">{e.minor}</p>
           </div>
-        ))}
-      </dl>
+          <span className="when">{e.when}</span>
+        </div>
+      </section>
+
+      <section className="group" aria-labelledby="campus-h">
+        <h2 id="campus-h" className="group-title">On campus</h2>
+        <div className="orgs">
+          {site.campus.map((c) => (
+            <Ext key={c.name} href={c.url} className="card row org">
+              <Logo name={c.name} domain={c.domain} src={c.logo} />
+              <span className="row-title">{c.name}</span>
+              <ArrowIcon />
+            </Ext>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
 
 function Projects() {
   return (
-    <div className="panel-inner">
-      <p className="panel-lede">
-        Small tools built the way forward deployed work goes: start from a messy customer problem and ship the thing that solves it.
-      </p>
-      <ul className="projects">
-        {site.projects.map((p) => {
-          const primary = p.live || p.repo;
-          return (
-            <li key={p.name} className="project">
-              <div className="project-head">
-                <h3>
-                  {primary ? (
-                    <Ext href={primary} className="project-link">
-                      {p.name}
-                      <ArrowIcon />
-                    </Ext>
-                  ) : (
-                    p.name
-                  )}
-                </h3>
-                <div className="project-actions">
-                  {p.live && <Ext href={p.live}>Live demo</Ext>}
-                  {p.repo && <Ext href={p.repo}>Code</Ext>}
-                </div>
+    <div className="stack">
+      <p className="lede">Things I&rsquo;ve built recently. Each one is live, so try them out.</p>
+      <ul className="list">
+        {site.projects.map((p) => (
+          <li key={p.name} className="card project">
+            <div className="project-top">
+              <h3>{p.name}</h3>
+              <div className="actions">
+                {p.live && (
+                  <Ext href={p.live} className="btn btn-primary">
+                    Live demo
+                  </Ext>
+                )}
+                {p.repo && (
+                  <Ext href={p.repo} className="btn">
+                    <GitHubIcon />
+                    Code
+                  </Ext>
+                )}
               </div>
-              <p className="project-summary">{p.summary}</p>
-              <ul className="chips" aria-label="Built with">
-                {p.stack.map((s) => (
-                  <li key={s}>{s}</li>
-                ))}
-              </ul>
-            </li>
-          );
-        })}
+            </div>
+            <p className="project-summary">{p.summary}</p>
+            <ul className="chips" aria-label="Built with">
+              {p.stack.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+          </li>
+        ))}
       </ul>
     </div>
   );
 }
 
 function Internships() {
+  const also = site.alsoWorkedWith;
   return (
-    <div className="panel-inner">
-      <ol className="roles">
+    <div className="stack">
+      <ol className="list">
         {site.internships.map((r) => (
-          <li key={r.org} className="role">
+          <li key={r.org} className="card role">
             <div className="role-head">
-              <h3>{r.org}</h3>
+              <Logo name={r.org} domain={r.domain} src={r.logo} />
+              <div className="row-main">
+                <h3 className="row-title">{r.org}</h3>
+                <p className="row-sub">{r.role}</p>
+              </div>
               {r.when && <span className="when">{r.when}</span>}
             </div>
-            <p className="role-title">{r.role}</p>
             {r.points.length > 0 && (
               <ul className="points">
                 {r.points.map((pt) => (
@@ -153,6 +200,15 @@ function Internships() {
           </li>
         ))}
       </ol>
+
+      <div className="also">
+        <div className="also-logos">
+          {also.orgs.map((o) => (
+            <Logo key={o.name} name={o.name} domain={o.domain} src={o.logo} size="sm" />
+          ))}
+        </div>
+        <p>{also.text}</p>
+      </div>
     </div>
   );
 }
@@ -160,22 +216,38 @@ function Internships() {
 function Writing() {
   const { posts, blurb } = site.writing;
   return (
-    <div className="panel-inner">
-      <p className="panel-lede">{blurb}</p>
+    <div className="stack">
+      <div className="card writing">
+        <div className="writing-head">
+          <span className="icon-tile" aria-hidden="true">
+            <PenIcon />
+          </span>
+          <div className="row-main">
+            <h3 className="row-title">Substack</h3>
+            <p className="row-sub">AI tools, tested hands-on</p>
+          </div>
+          {site.links.substack ? (
+            <Ext href={site.links.substack} className="btn btn-primary">
+              Read
+            </Ext>
+          ) : (
+            <span className="badge">Link coming soon</span>
+          )}
+        </div>
+        <p className="writing-blurb">{blurb}</p>
+      </div>
+
       {posts.length > 0 && (
-        <ul className="posts">
+        <ul className="list">
           {posts.map((p) => (
             <li key={p.url}>
-              <Ext href={p.url}>{p.title}</Ext>
-              <span className="when">{p.date}</span>
+              <Ext href={p.url} className="card row post">
+                <span className="row-title">{p.title}</span>
+                <span className="when">{p.date}</span>
+              </Ext>
             </li>
           ))}
         </ul>
-      )}
-      {site.links.substack && (
-        <Ext href={site.links.substack} className="button">
-          Read on Substack
-        </Ext>
       )}
     </div>
   );
@@ -183,22 +255,26 @@ function Writing() {
 
 function Contact() {
   const rows = [
-    { label: "Email", value: site.email, href: `mailto:${site.email}` },
-    site.links.linkedin && { label: "LinkedIn", value: site.links.linkedin.replace(/^https?:\/\/(www\.)?/, ""), href: site.links.linkedin },
-    site.links.github && { label: "GitHub", value: site.links.github.replace(/^https?:\/\/(www\.)?/, ""), href: site.links.github },
-    site.links.substack && { label: "Substack", value: site.links.substack.replace(/^https?:\/\/(www\.)?/, ""), href: site.links.substack },
-    site.links.resume && { label: "Resume", value: "Download PDF", href: site.links.resume },
-  ].filter(Boolean) as { label: string; value: string; href: string }[];
+    { label: "Email", value: site.email, href: `mailto:${site.email}`, icon: <MailIcon /> },
+    site.links.linkedin && { label: "LinkedIn", value: "Deepa Venkat", href: site.links.linkedin, icon: <LinkedInIcon /> },
+    site.links.github && { label: "GitHub", value: site.links.github.replace(/^https?:\/\/(www\.)?/, ""), href: site.links.github, icon: <GitHubIcon /> },
+    site.links.substack && { label: "Substack", value: site.links.substack.replace(/^https?:\/\/(www\.)?/, ""), href: site.links.substack, icon: <PenIcon /> },
+  ].filter(Boolean) as { label: string; value: string; href: string; icon: React.ReactElement }[];
 
   return (
-    <div className="panel-inner">
-      <p className="panel-lede">The fastest way to reach me is email. I read everything and reply quickly.</p>
-      <ul className="contact">
+    <div className="stack">
+      <p className="lede">Email is the fastest way to reach me. I&rsquo;m also happy to connect on LinkedIn.</p>
+      <ul className="list">
         {rows.map((r) => (
           <li key={r.label}>
-            <Ext href={r.href}>
-              <span className="contact-label">{r.label}</span>
-              <span className="contact-value">{r.value}</span>
+            <Ext href={r.href} className="card row contact-row">
+              <span className="icon-tile" aria-hidden="true">
+                {r.icon}
+              </span>
+              <span className="row-main">
+                <span className="row-title">{r.label}</span>
+                <span className="row-sub">{r.value}</span>
+              </span>
               <ArrowIcon />
             </Ext>
           </li>
@@ -224,7 +300,7 @@ export default function TabbedSite() {
   const listRef = useRef<HTMLDivElement>(null);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
 
-  // Sync with the URL hash so tabs can be linked directly (e.g. /#projects).
+  // Sync with the URL hash so each tab has its own link (e.g. /#projects).
   useEffect(() => {
     const fromHash = () => {
       const h = window.location.hash.slice(1) as TabId;
@@ -240,7 +316,6 @@ export default function TabbedSite() {
     const list = listRef.current;
     if (!el || !list) return;
     setIndicator({ left: el.offsetLeft, width: el.offsetWidth });
-    // Keep the active tab visible when the bar scrolls on small screens.
     const { scrollLeft, clientWidth } = list;
     if (el.offsetLeft < scrollLeft || el.offsetLeft + el.offsetWidth > scrollLeft + clientWidth) {
       list.scrollTo({ left: el.offsetLeft - 12, behavior: "smooth" });
@@ -300,16 +375,16 @@ export default function TabbedSite() {
           </div>
         </div>
         <nav className="socials" aria-label="Profiles">
-          {site.links.github && (
-            <Ext href={site.links.github} className="icon-link">
-              <GitHubIcon />
-              <span className="sr">GitHub</span>
-            </Ext>
-          )}
           {site.links.linkedin && (
             <Ext href={site.links.linkedin} className="icon-link">
               <LinkedInIcon />
               <span className="sr">LinkedIn</span>
+            </Ext>
+          )}
+          {site.links.github && (
+            <Ext href={site.links.github} className="icon-link">
+              <GitHubIcon />
+              <span className="sr">GitHub</span>
             </Ext>
           )}
           <a href={`mailto:${site.email}`} className="icon-link">
